@@ -54,7 +54,7 @@ flowchart TD
         Wind["Wind Generator\nVariable Output"]
     end
 
-    Fault["⚠ Fault Thread\nRandom Event Injection"]
+    Fault["Fault Thread\nRandom Event Injection"]
 
     Grid["Grid Controller\nMutex-Protected Shared State\nSemaphore — 1000 unit capacity limit\nCondition Variable — demand signals"]
 
@@ -76,6 +76,8 @@ flowchart TD
     Balancer -- allocate power --> Residential
     Balancer -- allocate power --> Industrial
     Balancer -- allocate power --> Commercial
-    CON -- demand & status --> Grid
-    CON --> Monitor
+    Residential -- demand & status --> Grid
+    Industrial -- demand & status --> Grid
+    Commercial -- demand & status --> Grid
+    Residential --> Monitor
 ``` ```
