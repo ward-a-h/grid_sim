@@ -43,22 +43,23 @@ make clean
 Operating System Theory — FAST NUCES
 Instructor: Sir Minhal
 
-
 ## System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph GEN["Generator Threads - Producers"]
+    subgraph GEN["Generator Threads — Producers"]
         Coal["Coal Generator\nConstant Output"]
         Solar["Solar Generator\nDaytime Only"]
         Wind["Wind Generator\nVariable Output"]
     end
 
     Fault["Fault Thread\nRandom Event Injection"]
+
     Grid["Grid Controller\nMutex-Protected Shared State\nSemaphore: 1000 unit limit\nCondition Variable: demand signals"]
+
     Balancer["Load Balancer\nPriority Allocation + Fairness Tracker"]
 
-    subgraph CON["Consumer Threads - Regions"]
+    subgraph CON["Consumer Threads — Regions"]
         Residential["Residential\nHigh Priority"]
         Industrial["Industrial\nMedium Priority"]
         Commercial["Commercial\nLow Priority"]
@@ -69,7 +70,7 @@ flowchart TD
     Coal -- produce energy --> Grid
     Solar -- produce energy --> Grid
     Wind -- produce energy --> Grid
-    Fault -- inject fault --> Grid
+    Fault -. inject fault .-> Grid
     Grid -- shortage signal --> Balancer
     Balancer -- allocate power --> Residential
     Balancer -- allocate power --> Industrial
@@ -78,4 +79,14 @@ flowchart TD
     Industrial -- demand and status --> Grid
     Commercial -- demand and status --> Grid
     Residential --> Monitor
+``` 
+
+### How it works
+
+1. **Generator threads** run independently and continuously produce energy into the shared grid. Coal runs at a constant rate, solar only during daytime cycles, and wind at random intervals and amounts.
+2. **The Grid Controller** sits at the center. It holds all shared state protected by a mutex so only one thread can access it at a time. A semaphore enforces the 1000 unit hard ceiling and a condition variable wakes up waiting consumers when new energy arrives.
+3. **The Fault Thread** runs separately and randomly takes generators offline, forcing the system to adapt with reduced supply. Generators recover automatically after a randomized downtime.
+4. **When supply runs short** the Grid Controller signals the Load Balancer which distributes available power in priority order. Residential first, then Industrial, then Commercial. A fairness tracker prevents low priority regions from being starved indefinitely.
+5. **Consumer threads** report their demand back to the Grid Controller and wait on the condition variable when there isn't enough supply, waking up only when a generator broadcasts that new energy is available.
+6. **The Monitor Interface** reads from the shared grid state every 20 seconds and prints an allocation rate and fairness index so you can see how well the system is performing.
 ```
