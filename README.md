@@ -46,27 +46,25 @@ Instructor: Sir Minhal
 
 ## System Architecture
 
-````mermaid
+```mermaid
 flowchart TD
-    subgraph GEN["Generator Threads — Producers"]
+    subgraph GEN["Generator Threads - Producers"]
         Coal["Coal Generator\nConstant Output"]
         Solar["Solar Generator\nDaytime Only"]
         Wind["Wind Generator\nVariable Output"]
     end
 
     Fault["Fault Thread\nRandom Event Injection"]
-
-    Grid["Grid Controller\nMutex-Protected Shared State\nSemaphore — 1000 unit capacity limit\nCondition Variable — demand signals"]
-
+    Grid["Grid Controller\nMutex-Protected Shared State\nSemaphore: 1000 unit limit\nCondition Variable: demand signals"]
     Balancer["Load Balancer\nPriority Allocation + Fairness Tracker"]
 
-    subgraph CON["Consumer Threads — Regions"]
+    subgraph CON["Consumer Threads - Regions"]
         Residential["Residential\nHigh Priority"]
         Industrial["Industrial\nMedium Priority"]
         Commercial["Commercial\nLow Priority"]
     end
 
-    Monitor["Monitor Interface\nMetrics + Console Display"]
+    Monitor["Monitor Interface\nMetrics and Console Display"]
 
     Coal -- produce energy --> Grid
     Solar -- produce energy --> Grid
@@ -76,8 +74,8 @@ flowchart TD
     Balancer -- allocate power --> Residential
     Balancer -- allocate power --> Industrial
     Balancer -- allocate power --> Commercial
-    Residential -- demand & status --> Grid
-    Industrial -- demand & status --> Grid
-    Commercial -- demand & status --> Grid
+    Residential -- demand and status --> Grid
+    Industrial -- demand and status --> Grid
+    Commercial -- demand and status --> Grid
     Residential --> Monitor
-``` ```
+```
