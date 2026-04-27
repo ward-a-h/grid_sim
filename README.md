@@ -46,36 +46,36 @@ Instructor: Sir Minhal
 
 ## System Architecture
 
-```mermaid
+````mermaid
 flowchart TD
-    subgraph Generators["Generator Threads (Producers)"]
+    subgraph GEN["Generator Threads — Producers"]
         Coal["Coal Generator\nConstant Output"]
         Solar["Solar Generator\nDaytime Only"]
         Wind["Wind Generator\nVariable Output"]
     end
 
-    Fault["Fault Thread\nRandom Event Injection"]
+    Fault["⚠ Fault Thread\nRandom Event Injection"]
 
-    Grid["Grid Controller\nShared State - Mutex Protected\n• Counting Semaphore: grid capacity limit\n• Condition Variables: fault & demand signals"]
+    Grid["Grid Controller\nMutex-Protected Shared State\nSemaphore — 1000 unit capacity limit\nCondition Variable — demand signals"]
 
-    Balancer["Load Balancer\nPriority-Based Allocation + Fairness Tracker"]
+    Balancer["Load Balancer\nPriority Allocation + Fairness Tracker"]
 
-    subgraph Consumers["Consumer Threads (Regions)"]
+    subgraph CON["Consumer Threads — Regions"]
         Residential["Residential\nHigh Priority"]
         Industrial["Industrial\nMedium Priority"]
         Commercial["Commercial\nLow Priority"]
     end
 
-    Monitor["Monitor Interface\nConsole Display"]
+    Monitor["Monitor Interface\nMetrics + Console Display"]
 
-    Coal -->|produce energy| Grid
-    Solar -->|produce energy| Grid
-    Wind -->|produce energy| Grid
-    Fault -->|inject fault| Grid
-    Grid -->|shortage signal| Balancer
-    Balancer -->|allocate power| Residential
-    Balancer -->|allocate power| Industrial
-    Balancer -->|allocate power| Commercial
-    Consumers -->|demand & status| Grid
-    Residential --> Monitor
-```
+    Coal -- produce energy --> Grid
+    Solar -- produce energy --> Grid
+    Wind -- produce energy --> Grid
+    Fault -- inject fault --> Grid
+    Grid -- shortage signal --> Balancer
+    Balancer -- allocate power --> Residential
+    Balancer -- allocate power --> Industrial
+    Balancer -- allocate power --> Commercial
+    CON -- demand & status --> Grid
+    CON --> Monitor
+``` ```
