@@ -42,3 +42,40 @@ make clean
 
 Operating System Theory — FAST NUCES
 Instructor: Sir Minhal
+
+
+## System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Generators["Generator Threads (Producers)"]
+        Coal["Coal Generator\nConstant Output"]
+        Solar["Solar Generator\nDaytime Only"]
+        Wind["Wind Generator\nVariable Output"]
+    end
+
+    Fault["Fault Thread\nRandom Event Injection"]
+
+    Grid["Grid Controller\nShared State - Mutex Protected\n• Counting Semaphore: grid capacity limit\n• Condition Variables: fault & demand signals"]
+
+    Balancer["Load Balancer\nPriority-Based Allocation + Fairness Tracker"]
+
+    subgraph Consumers["Consumer Threads (Regions)"]
+        Residential["Residential\nHigh Priority"]
+        Industrial["Industrial\nMedium Priority"]
+        Commercial["Commercial\nLow Priority"]
+    end
+
+    Monitor["Monitor Interface\nConsole Display"]
+
+    Coal -->|produce energy| Grid
+    Solar -->|produce energy| Grid
+    Wind -->|produce energy| Grid
+    Fault -->|inject fault| Grid
+    Grid -->|shortage signal| Balancer
+    Balancer -->|allocate power| Residential
+    Balancer -->|allocate power| Industrial
+    Balancer -->|allocate power| Commercial
+    Consumers -->|demand & status| Grid
+    Residential --> Monitor
+```
