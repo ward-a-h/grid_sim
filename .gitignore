@@ -1,0 +1,8 @@
+# compiled executable
+grid_sim
+
+# object files
+*.o
+
+# core dumps
+core
