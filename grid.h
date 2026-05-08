@@ -24,6 +24,7 @@ typedef struct {
     int region_deficit[NUM_REGIONS]; //how much each region has been denied over time(deficit)
     int generator_active[NUM_GENERATORS];//1=ON (generator runs normally)
     //0=OFF (generator broke down due to a fault)
+    Metrics metrics;
     pthread_mutex_t lock; //mutex (only 1 thread can access data at a point)
     sem_t capacity_sem;//counting semaphore(tracks count of how much resource available)
     pthread_cond_t demand_change;//signals all sleeping threads when a change occurs
@@ -42,5 +43,6 @@ void* commercial_consumer(void* arg);
 // Load balancer (Manahil)
 void balance_load(GridState* grid);
 void* fault_thread(void* arg);
+void* metrics_thread(void* arg);
 
 #endif
