@@ -11,6 +11,12 @@
 #define NUM_GENERATORS 3 //3 power plants: Coal, Wind, Solar
 #define NUM_REGIONS 3 //3 consumer areas: Residential, Commercial, Industrial
 
+typedef struct {   //manahil
+    int total_demanded;
+    int total_served;
+    int fault_count;
+    int recovery_count;
+} Metrics;
 typedef struct {
     int current_load; //total energy currently in the grid
     int region_demand[NUM_REGIONS]; //what each region is demanding
