@@ -30,12 +30,16 @@ void* residential_consumer(void* arg) {
         }
 
         // enough energy is available — consume it
-        grid->current_load -= demand;
-        grid->region_served[id] += demand;
+        //grid->current_load -= demand;
+        //grid->region_served[id] += demand;
 
-        printf("RESIDENTIAL: consumed %d units. Grid now at %d/%d\n",
-               demand, grid->current_load, MAX_CAPACITY);
+        //printf("RESIDENTIAL: consumed %d units. Grid now at %d/%d\n",
+                //demand, grid->current_load, MAX_CAPACITY);
+            balance_load(grid);
 
+        printf("RESIDENTIAL request processed.\n");
+
+            grid->region_demand[id] = 0;
         // wake up other threads (generators or other consumers) about the change
         pthread_cond_broadcast(&grid->demand_change);
 
@@ -64,12 +68,16 @@ void* industrial_consumer(void* arg) {
             pthread_cond_wait(&grid->demand_change, &grid->lock);
         }
 
-        grid->current_load -= demand;
-        grid->region_served[id] += demand;
+        //grid->current_load -= demand;
+        //grid->region_served[id] += demand;
 
-        printf("INDUSTRIAL: consumed %d units. Grid now at %d/%d\n",
-               demand, grid->current_load, MAX_CAPACITY);
+        //printf("INDUSTRIAL: consumed %d units. Grid now at %d/%d\n",
+               //demand, grid->current_load, MAX_CAPACITY);
+        balance_load(grid);
 
+printf("INDUSTRIAL request processed.\n");
+
+grid->region_demand[id] = 0;
         pthread_cond_broadcast(&grid->demand_change);
         pthread_mutex_unlock(&grid->lock);
     }
@@ -95,12 +103,16 @@ void* commercial_consumer(void* arg) {
             pthread_cond_wait(&grid->demand_change, &grid->lock);
         }
 
-        grid->current_load -= demand;
-        grid->region_served[id] += demand;
+        //grid->current_load -= demand;
+        //grid->region_served[id] += demand;
 
-        printf("COMMERCIAL: consumed %d units. Grid now at %d/%d\n",
-               demand, grid->current_load, MAX_CAPACITY);
+        //printf("COMMERCIAL: consumed %d units. Grid now at %d/%d\n",
+               //demand, grid->current_load, MAX_CAPACITY);
+        balance_load(grid);
 
+printf("COMMERCIAL request processed.\n");
+
+grid->region_demand[id] = 0;
         pthread_cond_broadcast(&grid->demand_change);
         pthread_mutex_unlock(&grid->lock);
     }
