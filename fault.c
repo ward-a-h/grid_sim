@@ -13,7 +13,7 @@ void* fault_thread(void* arg) {
         "WIND"
     };
 
-   while (grid->stop == 0) {
+    while (grid->stop == 0) {
 
         // wait before creating fault
         int wait_before_fault = rand() % 10 + 8;
@@ -29,7 +29,9 @@ void* fault_thread(void* arg) {
 
             grid->generator_active[target] = 0;
 
-            printf("\n[FAULT] %s generator DOWN\n\n",
+            printf(RED
+                   "\n[FAULT] %s generator went DOWN!\n\n"
+                   RESET,
                    names[target]);
 
             fflush(stdout);
@@ -45,15 +47,21 @@ void* fault_thread(void* arg) {
 
         pthread_mutex_lock(&grid->lock);
 
-        grid->generator_active[target] = 1;
+        // restore generator only if simulation still running
+        if (grid->stop == 0) {
 
-        printf("\n[RECOVERY] %s generator restored after %d seconds\n\n",
-               names[target],
-               recovery_time);
+            grid->generator_active[target] = 1;
 
-        fflush(stdout);
+            printf(GREEN
+                   "\n[RECOVERY] %s generator is back ONLINE after %d seconds\n\n"
+                   RESET,
+                   names[target],
+                   recovery_time);
 
-        pthread_cond_broadcast(&grid->demand_change);
+            fflush(stdout);
+
+            pthread_cond_broadcast(&grid->demand_change);
+        }
 
         pthread_mutex_unlock(&grid->lock);
     }
