@@ -6,7 +6,7 @@ void* metrics_thread(void* arg) {
 
     int cycle = 0;
 
-    while (1) {
+while (cycle < 2) {
 
         sleep(20);
 
