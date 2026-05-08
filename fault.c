@@ -13,7 +13,7 @@ void* fault_thread(void* arg) {
         "WIND"
     };
 
-    while (1) {
+   while (grid->stop == 0) {
 
         // wait before creating fault
         int wait_before_fault = rand() % 10 + 8;
