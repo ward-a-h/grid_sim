@@ -8,12 +8,11 @@ void balance_load(GridState* grid) {
     // Default priority order
     int order[NUM_REGIONS] = {0, 1, 2};
 
-    // Fairness adjustment
+    
     if (grid->region_deficit[2] > 500) {
         order[1] = 2;
         order[2] = 1;
-//
-        printf("[BALANCER] Fairness boost activated for Commercial region\n");
+       printf("[BALANCER] Fairness boost activated for Commercial region\n");
         fflush(stdout);
     }
 
