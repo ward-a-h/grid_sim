@@ -7,6 +7,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+
+// ANSI color codes for terminal output
+#define RED     "\033[0;31m"
+#define GREEN   "\033[0;32m"
+#define YELLOW  "\033[0;33m"
+#define BLUE    "\033[0;34m"
+#define CYAN    "\033[0;36m"
+#define BOLD    "\033[1m"
+#define RESET   "\033[0m"
+
+
 #define MAX_CAPACITY 1000
 #define NUM_GENERATORS 3 //3 power plants: Coal, Wind, Solar
 #define NUM_REGIONS 3 //3 consumer areas: Residential, Commercial, Industrial
@@ -24,6 +35,7 @@ typedef struct {
     int region_deficit[NUM_REGIONS]; //how much each region has been denied over time(deficit)
     int generator_active[NUM_GENERATORS];//1=ON (generator runs normally)
     //0=OFF (generator broke down due to a fault)
+    int stop; //0 = keep running, 1 = stop all threads after 3 metrics cycles
     Metrics metrics;
     pthread_mutex_t lock; //mutex (only 1 thread can access data at a point)
     sem_t capacity_sem;//counting semaphore(tracks count of how much resource available)

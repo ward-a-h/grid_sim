@@ -5,7 +5,7 @@ COMPILER = gcc
 FLAGS = -Wall -pthread
 
 # all .c files that need to be compiled together
-SOURCE_FILES = main.c generators.c consumers.c load_balancer.c fault.c metrics.c
+SOURCE_FILES = main.c generators.c consumers.c balance_load.c fault.c metrics.c
 
 # name of the final executable that runs
 EXECUTABLE_FILE = grid_sim
