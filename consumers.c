@@ -3,47 +3,36 @@
 
 void* residential_consumer(void* arg) {
     srand(time(NULL));
-
     GridState* grid = (GridState*) arg;
-    int id = 0; // residential is index 0
+    int id = 0;
 
-    while (1) {
-        // sleep BEFORE locking
+    while (grid->stop == 0) {
         sleep(3);
 
-        // random demand between 60 and 100 units
         int demand = rand() % 41 + 60;
 
-        // enter critical section — no other thread can touch grid data now
         pthread_mutex_lock(&grid->lock);
 
-        // tell the grid what we need
+        if (grid->stop == 1) {
+            pthread_mutex_unlock(&grid->lock);
+            break;
+        }
+
         grid->region_demand[id] = demand;
 
-        // if there isn't enough energy, wait safely
-        // pthread_cond_wait releases the lock and sleeps atomically
-        // when woken up, it re-acquires the lock automatically
-        while (grid->current_load < demand) {
-            printf("RESIDENTIAL: needs %d units, grid only has %d. Waiting...\n",
+        while (grid->current_load < demand && grid->stop == 0) {
+            printf(BLUE "RESIDENTIAL: needs %d units, grid only has %d. Waiting...\n" RESET,
                    demand, grid->current_load);
             pthread_cond_wait(&grid->demand_change, &grid->lock);
         }
 
-        // enough energy is available — consume it
-        //grid->current_load -= demand;
-        //grid->region_served[id] += demand;
-
-        //printf("RESIDENTIAL: consumed %d units. Grid now at %d/%d\n",
-                //demand, grid->current_load, MAX_CAPACITY);
+        if (grid->stop == 0) {
             balance_load(grid);
-
-        printf("RESIDENTIAL request processed.\n");
-
+            printf(BLUE "RESIDENTIAL: request processed.\n" RESET);
             grid->region_demand[id] = 0;
-        // wake up other threads (generators or other consumers) about the change
-        pthread_cond_broadcast(&grid->demand_change);
+            pthread_cond_broadcast(&grid->demand_change);
+        }
 
-        // release the lock
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
@@ -51,34 +40,35 @@ void* residential_consumer(void* arg) {
 
 void* industrial_consumer(void* arg) {
     GridState* grid = (GridState*) arg;
-    int id = 1; // industrial is index 1
+    int id = 1;
 
-    while (1) {
-        sleep(4); // industrial runs on a slower cycle
+    while (grid->stop == 0) {
+        sleep(4);
 
-        int demand = 80; // always steady, no randomness
+        int demand = 80;
 
         pthread_mutex_lock(&grid->lock);
 
+        if (grid->stop == 1) {
+            pthread_mutex_unlock(&grid->lock);
+            break;
+        }
+
         grid->region_demand[id] = demand;
 
-        while (grid->current_load < demand) {
-            printf("INDUSTRIAL: needs %d units, grid only has %d. Waiting...\n",
+        while (grid->current_load < demand && grid->stop == 0) {
+            printf(BLUE "INDUSTRIAL: needs %d units, grid only has %d. Waiting...\n" RESET,
                    demand, grid->current_load);
             pthread_cond_wait(&grid->demand_change, &grid->lock);
         }
 
-        //grid->current_load -= demand;
-        //grid->region_served[id] += demand;
+        if (grid->stop == 0) {
+            balance_load(grid);
+            printf(BLUE "INDUSTRIAL: request processed.\n" RESET);
+            grid->region_demand[id] = 0;
+            pthread_cond_broadcast(&grid->demand_change);
+        }
 
-        //printf("INDUSTRIAL: consumed %d units. Grid now at %d/%d\n",
-               //demand, grid->current_load, MAX_CAPACITY);
-        balance_load(grid);
-
-printf("INDUSTRIAL request processed.\n");
-
-grid->region_demand[id] = 0;
-        pthread_cond_broadcast(&grid->demand_change);
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
@@ -86,43 +76,36 @@ grid->region_demand[id] = 0;
 
 void* commercial_consumer(void* arg) {
     GridState* grid = (GridState*) arg;
-    int id = 2; // commercial is index 2
+    int id = 2;
 
-    while (1) {
-        sleep(5); // slowest cycle
+    while (grid->stop == 0) {
+        sleep(5);
 
-        int demand = rand() % 21 + 40; // 40 to 60 units
+        int demand = rand() % 21 + 40;
 
         pthread_mutex_lock(&grid->lock);
 
+        if (grid->stop == 1) {
+            pthread_mutex_unlock(&grid->lock);
+            break;
+        }
+
         grid->region_demand[id] = demand;
 
-        while (grid->current_load < demand) {
-            printf("COMMERCIAL: needs %d units, grid only has %d. Waiting...\n",
+        while (grid->current_load < demand && grid->stop == 0) {
+            printf(BLUE "COMMERCIAL: needs %d units, grid only has %d. Waiting...\n" RESET,
                    demand, grid->current_load);
             pthread_cond_wait(&grid->demand_change, &grid->lock);
         }
 
-        //grid->current_load -= demand;
-        //grid->region_served[id] += demand;
+        if (grid->stop == 0) {
+            balance_load(grid);
+            printf(BLUE "COMMERCIAL: request processed.\n" RESET);
+            grid->region_demand[id] = 0;
+            pthread_cond_broadcast(&grid->demand_change);
+        }
 
-        //printf("COMMERCIAL: consumed %d units. Grid now at %d/%d\n",
-               //demand, grid->current_load, MAX_CAPACITY);
-        balance_load(grid);
-
-printf("COMMERCIAL request processed.\n");
-
-grid->region_demand[id] = 0;
-        pthread_cond_broadcast(&grid->demand_change);
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
 }
-
-
-
-
-
-
-
-
