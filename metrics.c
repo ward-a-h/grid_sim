@@ -6,7 +6,7 @@ void* metrics_thread(void* arg) {
 
     int cycle = 0;
 
-while (cycle < 2) {
+    while (cycle < 2) {
 
         sleep(20);
 
@@ -63,54 +63,113 @@ while (cycle < 2) {
         }
 
         printf("\n");
-        printf("========================================\n");
-        printf("         GRID METRICS REPORT\n");
-        printf("========================================\n");
 
-        printf("Cycle Number       : %d\n", cycle);
+        printf(BOLD CYAN);
+        printf("╔════════════════ SMART ENERGY GRID ════════════════╗\n");
+        printf(RESET);
 
-        printf("Allocation Rate    : %.2f%%\n",
-               allocation_rate);
+        printf("║ Cycle Number      : %-28d ║\n",
+               cycle);
 
-        printf("Fairness Index     : %.2f\n",
-               fairness);
-
-        printf("Current Grid Load  : %d/%d\n",
+        printf("║ Current Grid Load : %-6d / %-15d ║\n",
                grid->current_load,
                MAX_CAPACITY);
 
-        printf("\n");
+        // allocation rate color
+        if (allocation_rate >= 80)
+            printf(GREEN);
+        else if (allocation_rate >= 50)
+            printf(YELLOW);
+        else
+            printf(RED);
 
-        printf("Region Statistics\n");
+        printf("║ Allocation Rate   : %-27.2f%% ║\n",
+               allocation_rate);
 
-        printf("Residential Served : %d\n",
+        printf(RESET);
+
+        // fairness color
+        if (fairness >= 0.8)
+            printf(GREEN);
+        else if (fairness >= 0.5)
+            printf(YELLOW);
+        else
+            printf(RED);
+
+        printf("║ Fairness Index    : %-28.2f ║\n",
+               fairness);
+
+        printf(RESET);
+
+        printf(CYAN);
+        printf("╠══════════════ REGION STATUS ══════════════════════╣\n");
+        printf(RESET);
+
+        printf("║ Residential Served : %-25d ║\n",
                grid->region_served[0]);
 
-        printf("Industrial Served  : %d\n",
+        printf("║ Industrial Served  : %-25d ║\n",
                grid->region_served[1]);
 
-        printf("Commercial Served  : %d\n",
+        printf("║ Commercial Served  : %-25d ║\n",
                grid->region_served[2]);
 
+        printf(CYAN);
+        printf("╠══════════════ REGION DEFICITS ════════════════════╣\n");
+        printf(RESET);
+
+        printf("%s║ Residential Deficit : %-24d ║%s\n",
+               grid->region_deficit[0] > 0 ? RED : GREEN,
+               grid->region_deficit[0],
+               RESET);
+
+        printf("%s║ Industrial Deficit  : %-24d ║%s\n",
+               grid->region_deficit[1] > 0 ? RED : GREEN,
+               grid->region_deficit[1],
+               RESET);
+
+        printf("%s║ Commercial Deficit  : %-24d ║%s\n",
+               grid->region_deficit[2] > 0 ? RED : GREEN,
+               grid->region_deficit[2],
+               RESET);
+
+        printf(CYAN);
+        printf("╠══════════════ GENERATOR STATUS ═══════════════════╣\n");
+        printf(RESET);
+
+        printf("║ Coal Generator   : %s%-29s%s ║\n",
+               grid->generator_active[0] ? GREEN : RED,
+               grid->generator_active[0] ? "ONLINE" : "OFFLINE",
+               RESET);
+
+        printf("║ Solar Generator  : %s%-29s%s ║\n",
+               grid->generator_active[1] ? GREEN : RED,
+               grid->generator_active[1] ? "ONLINE" : "OFFLINE",
+               RESET);
+
+        printf("║ Wind Generator   : %s%-29s%s ║\n",
+               grid->generator_active[2] ? GREEN : RED,
+               grid->generator_active[2] ? "ONLINE" : "OFFLINE",
+               RESET);
+
+        printf(CYAN);
+        printf("╚═══════════════════════════════════════════════════╝\n");
+        printf(RESET);
+
         printf("\n");
-
-        printf("Region Deficits\n");
-
-        printf("Residential Deficit : %d\n",
-               grid->region_deficit[0]);
-
-        printf("Industrial Deficit  : %d\n",
-               grid->region_deficit[1]);
-
-        printf("Commercial Deficit  : %d\n",
-               grid->region_deficit[2]);
-
-        printf("========================================\n\n");
 
         fflush(stdout);
 
         pthread_mutex_unlock(&grid->lock);
     }
+
+    grid->stop = 1;
+
+    printf(RED
+           "\nSimulation complete. Shutting down all threads...\n"
+           RESET);
+
+    fflush(stdout);
 
     return NULL;
 }
