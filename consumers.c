@@ -1,7 +1,6 @@
 #include "grid.h"
 #include <time.h>
 
-// Clock thread — ticks every 5 seconds, drives peak/off-peak logic
 void* clock_thread(void* arg) {
     GridState* grid = (GridState*) arg;
     while (grid->stop == 0) {
@@ -9,10 +8,7 @@ void* clock_thread(void* arg) {
         if (grid->stop == 1) break;
         pthread_mutex_lock(&grid->lock);
         grid->tick++;
-        printf(CYAN "[CLOCK] Tick %d — %s\n" RESET,
-               grid->tick,
-               (grid->tick % 8 >= 4) ? "PEAK HOURS" : "off-peak");
-        pthread_cond_broadcast(&grid->demand_change);
+        printf(BOLD "CLOCK: tick %d\n" RESET, grid->tick);
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
@@ -21,25 +17,34 @@ void* clock_thread(void* arg) {
 void* residential_consumer(void* arg) {
     srand(time(NULL));
     GridState* grid = (GridState*) arg;
-    int id = 0;
+    int id = 0; // residential is index 0
 
     while (grid->stop == 0) {
 
-        // check peak hours before sleeping
+        // read tick to decide peak or normal hours
         pthread_mutex_lock(&grid->lock);
-        int is_peak = (grid->tick % 8 >= 4);
+        int current_tick = grid->tick;
         pthread_mutex_unlock(&grid->lock);
 
-        // peak hours: faster cycle and higher demand
-        int cycle_sleep = is_peak ? 2 : 3;
-        int demand = is_peak ? (rand() % 41 + 120) : (rand() % 41 + 60);
+        // peak hours = ticks 4-7 of every 8-tick cycle (evening simulation)
+        int is_peak = (current_tick % 8 >= 4);
+
+        int demand;
+        int cycle_sleep;
 
         if (is_peak) {
-            printf(BLUE "RESIDENTIAL: PEAK HOURS — high demand incoming\n" RESET);
+            demand = rand() % 41 + 120; // 120-160 units during peak
+            cycle_sleep = 2;             // requests come faster during peak
+            printf(BLUE "RESIDENTIAL: PEAK HOURS - high demand period\n" RESET);
+        } else {
+            demand = rand() % 41 + 60;  // random demand between 60 and 100 units
+            cycle_sleep = 3;
         }
 
+        // sleep BEFORE locking
         sleep(cycle_sleep);
 
+        // enter critical section — no other thread can touch grid data now
         pthread_mutex_lock(&grid->lock);
 
         if (grid->stop == 1) {
@@ -47,8 +52,12 @@ void* residential_consumer(void* arg) {
             break;
         }
 
+        // tell the grid what we need
         grid->region_demand[id] = demand;
 
+        // if there isn't enough energy, wait safely
+        // pthread_cond_wait releases the lock and sleeps atomically
+        // when woken up, it re-acquires the lock automatically
         while (grid->current_load < demand && grid->stop == 0) {
             printf(BLUE "RESIDENTIAL: needs %d units, grid only has %d. Waiting...\n" RESET,
                    demand, grid->current_load);
@@ -60,9 +69,11 @@ void* residential_consumer(void* arg) {
             printf(BLUE "RESIDENTIAL: request processed (%s).\n" RESET,
                    is_peak ? "PEAK" : "normal");
             grid->region_demand[id] = 0;
+            // wake up other threads (generators or other consumers) about the change
             pthread_cond_broadcast(&grid->demand_change);
         }
 
+        // release the lock
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
@@ -70,10 +81,12 @@ void* residential_consumer(void* arg) {
 
 void* industrial_consumer(void* arg) {
     GridState* grid = (GridState*) arg;
-    int id = 1;
+    int id = 1; // industrial is index 1
 
     while (grid->stop == 0) {
-        sleep(4);
+        sleep(4); // industrial runs on a slower cycle
+
+        int demand = 80; // always steady, no randomness
 
         pthread_mutex_lock(&grid->lock);
 
@@ -82,7 +95,6 @@ void* industrial_consumer(void* arg) {
             break;
         }
 
-        int demand = 80;
         grid->region_demand[id] = demand;
 
         while (grid->current_load < demand && grid->stop == 0) {
@@ -105,23 +117,27 @@ void* industrial_consumer(void* arg) {
 
 void* commercial_consumer(void* arg) {
     GridState* grid = (GridState*) arg;
-    int id = 2;
+    int id = 2; // commercial is index 2
 
     while (grid->stop == 0) {
 
-        // commercial is only active during off-peak (daytime) hours
+        // read tick to decide if daytime or off-hours
         pthread_mutex_lock(&grid->lock);
-        int is_daytime = (grid->tick % 8 < 5);
+        int current_tick = grid->tick;
         pthread_mutex_unlock(&grid->lock);
 
+        // commercial only active during daytime ticks (0-4 of every 8-tick cycle)
+        int is_daytime = (current_tick % 8 < 5);
+
         if (!is_daytime) {
-            printf(BLUE "COMMERCIAL: off-hours, not requesting energy.\n" RESET);
+            printf(BLUE "COMMERCIAL: closed during off-hours, sleeping...\n" RESET);
             sleep(5);
             continue;
         }
 
-        sleep(5);
+        sleep(5); // slowest cycle
 
+        // enter critical section — no other thread can touch grid data now
         pthread_mutex_lock(&grid->lock);
 
         if (grid->stop == 1) {
@@ -129,9 +145,14 @@ void* commercial_consumer(void* arg) {
             break;
         }
 
-        int demand = rand() % 21 + 40;
+        int demand = rand() % 21 + 40; // 40 to 60 units
+
+        // tell the grid what we need
         grid->region_demand[id] = demand;
 
+        // if there isn't enough energy, wait safely
+        // pthread_cond_wait releases the lock and sleeps atomically
+        // when woken up, it re-acquires the lock automatically
         while (grid->current_load < demand && grid->stop == 0) {
             printf(BLUE "COMMERCIAL: needs %d units, grid only has %d. Waiting...\n" RESET,
                    demand, grid->current_load);
@@ -142,9 +163,11 @@ void* commercial_consumer(void* arg) {
             balance_load(grid);
             printf(BLUE "COMMERCIAL: request processed.\n" RESET);
             grid->region_demand[id] = 0;
+            // wake up other threads (generators or other consumers) about the change
             pthread_cond_broadcast(&grid->demand_change);
         }
 
+        // release the lock
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
