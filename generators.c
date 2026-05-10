@@ -6,6 +6,9 @@ void* coal_generator(void* arg) {
     //coal runs every 2 seconds, always produces the same amount
     while (grid->stop == 0) {
         sleep(2); //sleeping before lock so other threads aren't blocked while we wait
+        if (grid->stop == 1) {
+         break;
+        }
         pthread_mutex_lock(&grid->lock);
 
         //check if coal plant is online before producing
@@ -34,6 +37,9 @@ void* solar_generator(void* arg) {
     int tick = 0;
     while (grid->stop == 0) {
         sleep(3); //slightly slower production than coal
+        if (grid->stop == 1) {
+         break;
+        }
         tick++;
         pthread_mutex_lock(&grid->lock);
 
@@ -77,6 +83,9 @@ void* wind_generator(void* arg) {
     while (grid->stop == 0) {
         int wait_time = rand() % 3 + 1;
         sleep(wait_time);//wind is unpredictable so rand sleep imitates that
+        if (grid->stop == 1) {
+         break;
+        }
         pthread_mutex_lock(&grid->lock);
 
         if (grid->generator_active[2]) {
