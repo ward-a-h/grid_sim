@@ -116,6 +116,7 @@ void* industrial_consumer(void* arg) {
 }
 
 void* commercial_consumer(void* arg) {
+    srand(time(NULL));
     GridState* grid = (GridState*) arg;
     int id = 2; // commercial is index 2
 
