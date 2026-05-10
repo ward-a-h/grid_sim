@@ -19,6 +19,11 @@ void* fault_thread(void* arg) {
         int wait_before_fault = rand() % 10 + 8;
         sleep(wait_before_fault);
 
+        // stop safely if simulation ended
+        if (grid->stop == 1) {
+            break;
+        }
+
         // choose random generator
         int target = rand() % NUM_GENERATORS;
 
@@ -28,6 +33,9 @@ void* fault_thread(void* arg) {
         if (grid->generator_active[target] == 1) {
 
             grid->generator_active[target] = 0;
+
+            // metrics update
+            grid->metrics.fault_count++;
 
             printf(RED
                    "\n[FAULT] %s generator went DOWN!\n\n"
@@ -45,12 +53,20 @@ void* fault_thread(void* arg) {
         int recovery_time = rand() % 8 + 5;
         sleep(recovery_time);
 
+        // stop safely if simulation ended
+        if (grid->stop == 1) {
+            break;
+        }
+
         pthread_mutex_lock(&grid->lock);
 
         // restore generator only if simulation still running
         if (grid->stop == 0) {
 
             grid->generator_active[target] = 1;
+
+            // metrics update
+            grid->metrics.recovery_count++;
 
             printf(GREEN
                    "\n[RECOVERY] %s generator is back ONLINE after %d seconds\n\n"
