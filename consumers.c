@@ -8,7 +8,7 @@ void* clock_thread(void* arg) {
         if (grid->stop == 1) break;
         pthread_mutex_lock(&grid->lock);
         grid->tick++;
-        printf(BOLD "CLOCK: tick %d\n" RESET, grid->tick);
+        // printf(BOLD "CLOCK: tick %d\n" RESET, grid->tick);
         pthread_mutex_unlock(&grid->lock);
     }
     return NULL;
