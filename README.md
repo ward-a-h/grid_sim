@@ -1,5 +1,10 @@
 # Smart Energy Grid Load Balancer – A Concurrency Simulation
 
+## Live GUI Demo
+Interactive browser-based visualization of the simulation:
+https://ward-a-h.github.io/grid_sim/gui/final_smart_energy_grid.html
+No setup needed — open the link and it runs instantly.
+
 A multithreaded energy grid simulation built in C using POSIX threads, mutexes, semaphores, and condition variables. Developed as an Operating Systems Theory project at FAST NUCES.
 
 ## What it does
@@ -42,6 +47,11 @@ make clean
 
 Operating System Theory — FAST NUCES
 Instructor: Sir Minhal
+
+## GUI
+A standalone browser-based GUI visualization is available in the gui/ folder.
+It replicates the simulation logic in JavaScript and runs entirely in the browser
+with no server or installation required.
 
 ## System Architecture
 
@@ -89,4 +99,5 @@ flowchart TD
 4. **When supply runs short** the Grid Controller signals the Load Balancer which distributes available power in priority order. Residential first, then Industrial, then Commercial. A fairness tracker prevents low priority regions from being starved indefinitely.
 5. **Consumer threads** report their demand back to the Grid Controller and wait on the condition variable when there isn't enough supply, waking up only when a generator broadcasts that new energy is available.
 6. **The Monitor Interface** reads from the shared grid state every 20 seconds and prints an allocation rate and fairness index so you can see how well the system is performing.
+
 ```
