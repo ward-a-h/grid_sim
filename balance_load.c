@@ -1,6 +1,7 @@
 #include "grid.h"
 
 void balance_load(GridState* grid) {
+
     // Mutex is already locked before calling this function
 
     int available = grid->current_load;
@@ -8,37 +9,74 @@ void balance_load(GridState* grid) {
     // Default priority order
     int order[NUM_REGIONS] = {0, 1, 2};
 
-    
-    if (grid->region_deficit[2] > 500) {
-        order[1] = 2;
-        order[2] = 1;
-       printf("[BALANCER] Fairness boost activated for Commercial region\n");
+    // Find most deprived region
+    int most_deprived = 0;
+
+    if (grid->region_deficit[1] >
+        grid->region_deficit[most_deprived]) {
+
+        most_deprived = 1;
+    }
+
+    if (grid->region_deficit[2] >
+        grid->region_deficit[most_deprived]) {
+
+        most_deprived = 2;
+    }
+
+    // Dynamic fairness boost
+    if (most_deprived != 0 &&
+        grid->region_deficit[most_deprived] > 200) {
+
+        order[1] = most_deprived;
+
+        order[2] = (most_deprived == 1) ? 2 : 1;
+
+        printf(YELLOW
+               "[BALANCER] Fairness boost activated for Region %d\n"
+               RESET,
+               most_deprived);
+
         fflush(stdout);
     }
 
+    // Serve regions
     for (int i = 0; i < NUM_REGIONS; i++) {
+
         int region = order[i];
+
         int demand = grid->region_demand[region];
 
         if (demand <= 0)
             continue;
 
+        // Full allocation
         if (available >= demand) {
-            // Full allocation
+
             available -= demand;
 
             grid->region_served[region] += demand;
+
             grid->region_deficit[region] = 0;
 
-            printf("[BALANCER] Region %d fully served: %d units\n",
-                   region, demand);
+            printf(GREEN
+                   "[BALANCER] Region %d fully served: %d units\n"
+                   RESET,
+                   region,
+                   demand);
         }
-        else if (available > 0) {
-            // Partial allocation
-            grid->region_served[region] += available;
-            grid->region_deficit[region] += (demand - available);
 
-            printf("[BALANCER] Region %d partially served: %d/%d | Deficit=%d\n",
+        // Partial allocation
+        else if (available > 0) {
+
+            grid->region_served[region] += available;
+
+            grid->region_deficit[region] +=
+                (demand - available);
+
+            printf(YELLOW
+                   "[BALANCER] Region %d partially served: %d/%d | Deficit=%d\n"
+                   RESET,
                    region,
                    available,
                    demand,
@@ -46,11 +84,15 @@ void balance_load(GridState* grid) {
 
             available = 0;
         }
+
+        // No allocation
         else {
-            // No allocation
+
             grid->region_deficit[region] += demand;
 
-            printf("[BALANCER] Region %d not served | Deficit=%d\n",
+            printf(RED
+                   "[BALANCER] Region %d not served | Deficit=%d\n"
+                   RESET,
                    region,
                    grid->region_deficit[region]);
         }
