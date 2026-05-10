@@ -2,8 +2,9 @@
 
 ## Live GUI Demo
 Interactive browser-based visualization of the simulation:
+
 https://ward-a-h.github.io/grid_sim/gui/final_smart_energy_grid.html
-No setup needed — open the link and it runs instantly.
+No setup needed. Open the link and it runs instantly.
 
 A multithreaded energy grid simulation built in C using POSIX threads, mutexes, semaphores, and condition variables. Developed as an Operating Systems Theory project at FAST NUCES.
 
