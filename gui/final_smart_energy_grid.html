@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Energy Grid — FAST NUCES</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #060a0f;
+    --bg2: #0c1218;
+    --bg3: #111a22;
+    --border: #1a2e3b;
+    --border2: #1f3a4a;
+    --green: #00e5a0;
+    --green2: #00b87a;
+    --green-dim: #0a2e22;
+    --red: #ff4757;
+    --red-dim: #2e0a0f;
+    --yellow: #ffa502;
+    --yellow-dim: #2e1f0a;
+    --blue: #2d8fff;
+    --blue-dim: #0a1a2e;
+    --cyan: #00c8e0;
+    --purple: #a855f7;
+    --text: #c8d8e8;
+    --text-dim: #4a6070;
+    --text-mid: #7a9ab0;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 16px; margin-bottom: 24px;
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 42px; height: 42px; border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--green);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--green-dim);
+  }
+  .logo-text { font-family: var(--sans); font-weight: 700; }
+  .logo-text h1 { font-size: 20px; color: var(--green); letter-spacing: 0.1em; line-height: 1; }
+  .logo-text p { font-size: 11px; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; font-family: var(--mono); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .sim-status {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  .status-dot.stopped { background: var(--red); box-shadow: 0 0 8px var(--red); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .cycle-badge {
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 12px; border: 1px solid var(--border2);
+    color: var(--text-mid); background: var(--bg2);
+  }
+
+  /* FAULT BANNER */
+  .fault-banner {
+    background: var(--red-dim); border: 1px solid var(--red);
+    padding: 10px 16px; margin-bottom: 16px;
+    font-family: var(--mono); font-size: 13px; color: var(--red);
+    display: none; animation: blink-border 1s infinite;
+  }
+  @keyframes blink-border { 0%,100%{border-color:var(--red)} 50%{border-color:transparent} }
+
+  /* METRIC CARDS ROW */
+  .metrics-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+  .metric-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .metric-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .metric-card.green::before { background: var(--green); }
+  .metric-card.blue::before { background: var(--blue); }
+  .metric-card.yellow::before { background: var(--yellow); }
+  .metric-card.purple::before { background: var(--purple); }
+  .metric-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.12em; margin-bottom: 6px; text-transform: uppercase; }
+  .metric-value { font-family: var(--mono); font-size: 28px; font-weight: 400; line-height: 1; }
+  .metric-value.green { color: var(--green); }
+  .metric-value.blue { color: var(--blue); }
+  .metric-value.yellow { color: var(--yellow); }
+  .metric-value.purple { color: var(--purple); }
+  .metric-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: var(--mono); }
+  .metric-bar { height: 3px; background: var(--border); margin-top: 10px; }
+  .metric-bar-fill { height: 100%; transition: width 0.5s ease; }
+
+  /* MAIN GRID */
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* SECTION */
+  .section { background: var(--bg2); border: 1px solid var(--border2); }
+  .section-header {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    color: var(--text-mid); text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header::before { content: '//'; color: var(--green); }
+  .section-body { padding: 14px 16px; }
+
+  /* GENERATORS */
+  .gen-list { display: flex; flex-direction: column; gap: 10px; }
+  .gen-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+  .gen-item.offline { border-color: var(--red); background: var(--red-dim); }
+  .gen-left { display: flex; align-items: center; gap: 12px; }
+  .gen-icon { font-size: 20px; }
+  .gen-name { font-weight: 600; font-size: 15px; letter-spacing: 0.05em; }
+  .gen-desc { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .gen-pill {
+    font-family: var(--mono); font-size: 10px; padding: 3px 10px;
+    letter-spacing: 0.1em;
+  }
+  .gen-pill.online { background: var(--green-dim); color: var(--green); border: 1px solid var(--green2); }
+  .gen-pill.offline { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+
+  /* REGIONS */
+  .region-list { display: flex; flex-direction: column; gap: 10px; }
+  .region-item { padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); }
+  .region-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .region-name { font-weight: 600; font-size: 14px; letter-spacing: 0.05em; }
+  .region-stats { display: flex; gap: 16px; }
+  .region-stat { font-family: var(--mono); font-size: 11px; }
+  .region-stat span { color: var(--text-dim); }
+  .region-bar { height: 4px; background: var(--border); position: relative; }
+  .region-bar-fill { height: 100%; transition: width 0.5s ease; }
+  .deficit-badge {
+    font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+  }
+  .deficit-ok { background: var(--green-dim); color: var(--green); }
+  .deficit-bad { background: var(--red-dim); color: var(--red); animation: pulse 1s infinite; }
+
+  /* LOG */
+  .log-section { background: var(--bg2); border: 1px solid var(--border2); margin-bottom: 16px; }
+  .log-body {
+    padding: 12px 16px; height: 160px; overflow-y: auto;
+    font-family: var(--mono); font-size: 12px; line-height: 1.8;
+  }
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-track { background: var(--bg); }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border2); }
+  .log-line { opacity: 0; animation: fadein 0.3s forwards; }
+  @keyframes fadein { to { opacity: 1; } }
+  .lg { color: var(--green); }
+  .ly { color: var(--yellow); }
+  .lc { color: var(--cyan); }
+  .lr { color: var(--red); }
+  .lb { color: var(--blue); }
+  .lp { color: var(--purple); }
+  .lw { color: var(--text-mid); }
+
+  /* CONTROLS */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    padding: 9px 18px; border: 1px solid var(--border2);
+    background: var(--bg2); color: var(--text); cursor: pointer;
+    transition: all 0.15s; text-transform: uppercase;
+  }
+  .btn:hover { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .btn.yellow:hover { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* FOOTER */
+  footer {
+    margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    display: flex; justify-content: space-between;
+  }
+
+  @media(max-width:700px) {
+    .metrics-row { grid-template-columns: repeat(2,1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <h1>SMART ENERGY GRID</h1>
+        <p>FAST-NUCES OS PROJECT // CONCURRENCY SIMULATION</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="cycle-badge" id="cycle-badge">CYCLE 0 / 2</div>
+      <div class="sim-status">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text" style="font-family:var(--mono);font-size:12px;color:var(--green)">RUNNING</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="fault-banner" id="fault-banner">⚠ FAULT DETECTED — <span id="fault-msg"></span></div>
+
+  <div class="metrics-row">
+    <div class="metric-card green">
+      <div class="metric-label">Grid Load</div>
+      <div class="metric-value green" id="m-load">0</div>
+      <div class="metric-sub">/ 1000 units capacity</div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="load-bar" style="background:var(--green);width:0%"></div></div>
+    </div>
+    <div class="metric-card blue">
+      <div class="metric-label">Allocation Rate</div>
+      <div class="metric-value blue" id="m-alloc">100%</div>
+      <div class="metric-sub">efficiency index</div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="alloc-bar" style="background:var(--blue);width:100%"></div></div>
+    </div>
+    <div class="metric-card yellow">
+      <div class="metric-label">Fairness Index</div>
+      <div class="metric-value yellow" id="m-fair">1.00</div>
+      <div class="metric-sub">0 = unfair / 1 = perfect</div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="fair-bar" style="background:var(--yellow);width:100%"></div></div>
+    </div>
+    <div class="metric-card purple">
+      <div class="metric-label">Faults / Recoveries</div>
+      <div class="metric-value purple" id="m-faults">0 / 0</div>
+      <div class="metric-sub">this session</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="section">
+      <div class="section-header">Generator Status</div>
+      <div class="section-body">
+        <div class="gen-list">
+          <div class="gen-item" id="gen-0">
+            <div class="gen-left">
+              <span class="gen-icon">🪨</span>
+              <div>
+                <div class="gen-name">Coal Plant</div>
+                <div class="gen-desc" id="gen-0-desc">+50 units every 2s — constant</div>
+              </div>
+            </div>
+            <span class="gen-pill online" id="gen-0-pill">ONLINE</span>
+          </div>
+          <div class="gen-item" id="gen-1">
+            <div class="gen-left">
+              <span class="gen-icon">☀️</span>
+              <div>
+                <div class="gen-name">Solar Farm</div>
+                <div class="gen-desc" id="gen-1-desc">+80 units daytime / 0 nighttime</div>
+              </div>
+            </div>
+            <span class="gen-pill online" id="gen-1-pill">ONLINE</span>
+          </div>
+          <div class="gen-item" id="gen-2">
+            <div class="gen-left">
+              <span class="gen-icon">💨</span>
+              <div>
+                <div class="gen-name">Wind Turbine</div>
+                <div class="gen-desc" id="gen-2-desc">+20–70 units random intervals</div>
+              </div>
+            </div>
+            <span class="gen-pill online" id="gen-2-pill">ONLINE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">Region Status</div>
+      <div class="section-body">
+        <div class="region-list">
+          <div class="region-item">
+            <div class="region-top">
+              <span class="region-name">🏠 Residential</span>
+              <span class="deficit-badge deficit-ok" id="res-def-badge">DEFICIT: 0</span>
+            </div>
+            <div class="region-stats" style="margin-bottom:6px">
+              <div class="region-stat"><span>Served: </span><span id="res-served">0</span></div>
+              <div class="region-stat"><span>Deficit: </span><span id="res-def">0</span></div>
+            </div>
+            <div class="region-bar"><div class="region-bar-fill" id="res-bar" style="background:var(--blue);width:0%"></div></div>
+          </div>
+          <div class="region-item">
+            <div class="region-top">
+              <span class="region-name">🏭 Industrial</span>
+              <span class="deficit-badge deficit-ok" id="ind-def-badge">DEFICIT: 0</span>
+            </div>
+            <div class="region-stats" style="margin-bottom:6px">
+              <div class="region-stat"><span>Served: </span><span id="ind-served">0</span></div>
+              <div class="region-stat"><span>Deficit: </span><span id="ind-def">0</span></div>
+            </div>
+            <div class="region-bar"><div class="region-bar-fill" id="ind-bar" style="background:var(--yellow);width:0%"></div></div>
+          </div>
+          <div class="region-item">
+            <div class="region-top">
+              <span class="region-name">🏢 Commercial</span>
+              <span class="deficit-badge deficit-ok" id="com-def-badge">DEFICIT: 0</span>
+            </div>
+            <div class="region-stats" style="margin-bottom:6px">
+              <div class="region-stat"><span>Served: </span><span id="com-served">0</span></div>
+              <div class="region-stat"><span>Deficit: </span><span id="com-def">0</span></div>
+            </div>
+            <div class="region-bar"><div class="region-bar-fill" id="com-bar" style="background:var(--purple);width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <div class="section-header">Event Log</div>
+    <div class="log-body" id="log-box"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="btn-fault" onclick="triggerFault()">⚡ Inject Fault</button>
+    <button class="btn yellow" id="btn-peak" onclick="triggerPeak()">📈 Peak Hour</button>
+
+    <button class="btn danger" id="btn-stop" onclick="stopSim()">⏹ Stop Simulation</button>
+  </div>
+
+  <footer>
+    <span>FAST-NUCES Karachi // CS2006 Operating Systems // Sir Minhal</span>
+    <span id="footer-time">--:--:--</span>
+  </footer>
+
+</div>
+
+<script>
+  let state = {
+    load: 0, served: [0,0,0], deficit: [0,0,0],
+    active: [true,true,true],
+    faults: 0, recoveries: 0,
+    cycle: 0, running: true,
+    tick: 0, totalDemand: 0, totalServed: 0,
+    coalT: 0, solarT: 0, windT: 0,
+    resT: 0, indT: 0, comT: 0, cycleT: 0,
+    solarTick: 0, windWait: rand(1,3)*10
+  };
+
+  function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+  function log(msg, cls='lw'){
+    const box = document.getElementById('log-box');
+    const d = document.createElement('div');
+    d.className = 'log-line ' + cls;
+    const t = new Date().toLocaleTimeString('en-GB',{hour12:false});
+    d.textContent = '['+t+'] ' + msg;
+    box.appendChild(d);
+    if(box.children.length > 200) box.removeChild(box.firstChild);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function updateMetrics(){
+    const load = state.load;
+    document.getElementById('m-load').textContent = load;
+    const lp = Math.min(100, load/10);
+    const lb = document.getElementById('load-bar');
+    lb.style.width = lp + '%';
+    lb.style.background = load > 800 ? 'var(--red)' : load > 500 ? 'var(--yellow)' : 'var(--green)';
+
+    const ar = state.totalDemand > 0 ? Math.round(state.totalServed/state.totalDemand*100) : 100;
+    document.getElementById('m-alloc').textContent = ar + '%';
+    const ab = document.getElementById('alloc-bar');
+    ab.style.width = ar + '%';
+    ab.style.background = ar >= 80 ? 'var(--blue)' : ar >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+    const maxS = Math.max(...state.served,1), minS = Math.min(...state.served);
+    const fi = (minS/maxS).toFixed(2);
+    document.getElementById('m-fair').textContent = fi;
+    const fb = document.getElementById('fair-bar');
+    fb.style.width = (fi*100)+'%';
+    fb.style.background = fi >= 0.8 ? 'var(--yellow)' : fi >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+
+    document.getElementById('m-faults').textContent = state.faults + ' / ' + state.recoveries;
+    document.getElementById('cycle-badge').textContent = 'CYCLE ' + state.cycle + ' / 2';
+
+    const names = ['res','ind','com'];
+    const colors = ['var(--blue)','var(--yellow)','var(--purple)'];
+    const maxServed = Math.max(...state.served,1);
+    names.forEach((n,i)=>{
+      document.getElementById(n+'-served').textContent = state.served[i];
+      document.getElementById(n+'-def').textContent = state.deficit[i];
+      const def = state.deficit[i];
+      const badge = document.getElementById(n+'-def-badge');
+      badge.textContent = 'DEFICIT: ' + def;
+      badge.className = 'deficit-badge ' + (def > 0 ? 'deficit-bad' : 'deficit-ok');
+      document.getElementById(n+'-bar').style.width = Math.min(100,state.served[i]/maxServed*100)+'%';
+      document.getElementById(n+'-bar').style.background = colors[i];
+    });
+
+    const genNames = ['gen-0','gen-1','gen-2'];
+    genNames.forEach((g,i)=>{
+      const item = document.getElementById(g);
+      const pill = document.getElementById(g+'-pill');
+      if(state.active[i]){
+        item.classList.remove('offline');
+        pill.className = 'gen-pill online'; pill.textContent = 'ONLINE';
+      } else {
+        item.classList.add('offline');
+        pill.className = 'gen-pill offline'; pill.textContent = 'OFFLINE';
+      }
+    });
+
+    document.getElementById('footer-time').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  }
+
+  function produce(gen, amount, label, cls){
+    if(!state.active[gen] || !state.running) return;
+    if(state.load + amount <= 1000){
+      state.load += amount;
+      log(label+': produced '+amount+' units. Grid at '+state.load+'/1000', cls);
+    }
+    updateMetrics();
+  }
+
+  function consume(region, demand, label){
+    if(!state.running) return;
+    state.totalDemand += demand;
+    if(state.load >= demand){
+      state.load -= demand;
+      state.served[region] += demand;
+      state.totalServed += demand;
+      state.deficit[region] = Math.max(0, state.deficit[region]-5);
+      log('[BALANCER] '+label+' fully served: '+demand+' units', 'lb');
+    } else if(state.load > 0){
+      const p = state.load;
+      state.served[region] += p;
+      state.totalServed += p;
+      state.deficit[region] += (demand-p);
+      log('[BALANCER] '+label+' partial: '+p+'/'+demand+' | deficit='+state.deficit[region], 'ly');
+      state.load = 0;
+    } else {
+      state.deficit[region] += demand;
+      log('[BALANCER] '+label+' NOT served | deficit='+state.deficit[region], 'lr');
+    }
+    updateMetrics();
+  }
+
+  function triggerFault(){
+    if(!state.running) return;
+    const avail = state.active.map((a,i)=>a?i:-1).filter(i=>i>=0);
+    if(!avail.length){ log('All generators already offline.','lr'); return; }
+    const t = avail[rand(0,avail.length-1)];
+    const names = ['COAL','SOLAR','WIND'];
+    state.active[t] = false;
+    state.faults++;
+    const banner = document.getElementById('fault-banner');
+    document.getElementById('fault-msg').textContent = names[t]+' generator went DOWN!';
+    banner.style.display = 'block';
+    log('[FAULT] '+names[t]+' generator went DOWN!', 'lr');
+    updateMetrics();
+    const rt = rand(5,12)*1000;
+    setTimeout(()=>{
+      if(!state.running) return;
+      state.active[t] = true;
+      state.recoveries++;
+      banner.style.display = 'none';
+      log('[RECOVERY] '+names[t]+' is back ONLINE after '+Math.round(rt/1000)+'s', 'lg');
+      updateMetrics();
+    }, rt);
+  }
+
+  function forceRecover(){
+    if(!state.running) return;
+    let recovered = false;
+    state.active.forEach((a,i)=>{
+      if(!a){ state.active[i]=true; state.recoveries++; recovered=true;
+        const n=['COAL','SOLAR','WIND'][i];
+        log('[RECOVERY] '+n+' manually restored ONLINE','lg');
+      }
+    });
+    if(!recovered) log('All generators already online.','lw');
+    document.getElementById('fault-banner').style.display='none';
+    updateMetrics();
+  }
+
+  function triggerPeak(){
+    if(!state.running) return;
+    log('⚡ PEAK HOUR: residential demand spike activated!','lp');
+    consume(0, rand(100,150), 'Residential [PEAK]');
+    consume(1, rand(90,120), 'Industrial [PEAK]');
+  }
+
+  function stopSim(){
+    state.running = false;
+    document.getElementById('status-dot').className = 'status-dot stopped';
+    document.getElementById('status-text').style.color = 'var(--red)';
+    document.getElementById('status-text').textContent = 'STOPPED';
+    ['btn-fault','btn-peak','btn-recover','btn-stop'].forEach(id=>{
+      document.getElementById(id).disabled = true;
+    });
+    log('Simulation complete. Shutting down all threads...','lr');
+    log('Final — Served: '+state.totalServed+' / Demanded: '+state.totalDemand,'lw');
+  }
+
+  function simTick(){
+    if(!state.running) return;
+    state.tick++;
+
+    state.coalT++;
+    if(state.coalT >= 20){ state.coalT=0; produce(0,50,'COAL','lg'); }
+
+    state.solarT++;
+    if(state.solarT >= 30){
+      state.solarT=0; state.solarTick++;
+      const isDay = state.solarTick%6 < 4;
+      if(isDay) produce(1,80,'SOLAR','ly');
+      else log('SOLAR: nighttime — no production','ly');
+    }
+
+    state.windT++;
+    if(state.windT >= state.windWait){
+      state.windT=0; state.windWait=rand(1,3)*10;
+      produce(2,rand(20,70),'WIND','lc');
+    }
+
+    state.resT++;
+    if(state.resT >= 30){ state.resT=0; consume(0,rand(60,100),'Residential'); }
+
+    state.indT++;
+    if(state.indT >= 40){ state.indT=0; consume(1,80,'Industrial'); }
+
+    state.comT++;
+    if(state.comT >= 50){ state.comT=0; consume(2,rand(40,60),'Commercial'); }
+
+    state.cycleT++;
+    if(state.cycleT >= 200){
+      state.cycleT=0; state.cycle++;
+      log('━━━ Cycle '+state.cycle+' completed ━━━','lw');
+      updateMetrics();
+      if(state.cycle >= 2) setTimeout(stopSim, 500);
+    }
+  }
+
+  log('System initializing...','lw');
+  log('Grid capacity: 1000 units','lw');
+  log('Threads started: Coal(2s) Solar(3s) Wind(random)','lg');
+  log('Consumer threads: Residential Industrial Commercial','lb');
+  log('Fault thread: active — monitoring generators','lp');
+  updateMetrics();
+  setInterval(simTick, 100);
+</script>
+</body>
+</html>
