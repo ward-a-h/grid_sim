@@ -36,6 +36,7 @@ typedef struct {
     int generator_active[NUM_GENERATORS];//1=ON (generator runs normally)
     //0=OFF (generator broke down due to a fault)
     int stop; //0 = keep running, 1 = stop all threads after 3 metrics cycles
+    int tick; //simulation clock, increments every 5 seconds to track time of day
     Metrics metrics;
     pthread_mutex_t lock; //mutex (only 1 thread can access data at a point)
     sem_t capacity_sem;//counting semaphore(tracks count of how much resource available)
@@ -51,6 +52,7 @@ void* wind_generator(void* arg);
 void* residential_consumer(void* arg);
 void* industrial_consumer(void* arg);
 void* commercial_consumer(void* arg);
+void* clock_thread(void* arg); //simulation clock, tracks time of day for peak hours
 
 // Load balancer (Manahil)
 void balance_load(GridState* grid);
