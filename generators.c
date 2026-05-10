@@ -9,6 +9,7 @@ void* coal_generator(void* arg) {
         if (grid->stop == 1) {
          break;
         }
+        sem_wait(&grid->capacity_sem);
         pthread_mutex_lock(&grid->lock);
 
         //check if coal plant is online before producing
@@ -27,6 +28,7 @@ void* coal_generator(void* arg) {
         }
 
         pthread_mutex_unlock(&grid->lock);
+        sem_post(&grid->capacity_sem);
     }
     return NULL;
 }
@@ -41,6 +43,7 @@ void* solar_generator(void* arg) {
          break;
         }
         tick++;
+        sem_wait(&grid->capacity_sem);
         pthread_mutex_lock(&grid->lock);
 
         if (grid->generator_active[1]) {
@@ -73,6 +76,7 @@ void* solar_generator(void* arg) {
         }
 
         pthread_mutex_unlock(&grid->lock);
+        sem_post(&grid->capacity_sem);
     }
     return NULL;
 }
@@ -86,6 +90,7 @@ void* wind_generator(void* arg) {
         if (grid->stop == 1) {
          break;
         }
+        sem_wait(&grid->capacity_sem);
         pthread_mutex_lock(&grid->lock);
 
         if (grid->generator_active[2]) {
@@ -100,8 +105,8 @@ void* wind_generator(void* arg) {
         } else {
             printf(RED "WIND: generator is down\n" RESET);
         }
-
         pthread_mutex_unlock(&grid->lock);
+        sem_post(&grid->capacity_sem);
     }
     return NULL;
 }
