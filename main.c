@@ -22,6 +22,7 @@ int main() {
     grid.metrics.fault_count = 0;
     grid.metrics.recovery_count = 0;
     grid.stop = 0; //simulation runs until metrics thread sets this to 1
+    grid.tick = 0; //simulation starts at tick 0
     for (int i = 0; i < NUM_GENERATORS; i++) {
         grid.generator_active[i] = 1; // all start as active
     }
@@ -48,7 +49,9 @@ int main() {
     // Creating fault thread (Manahil's)
     pthread_create(&fault_t, NULL, fault_thread, &grid);
     pthread_t metrics_t;
+    pthread_t clock_t;
     pthread_create(&metrics_t, NULL, metrics_thread, &grid);
+    pthread_create(&clock_t, NULL, clock_thread, &grid);
 
     // pthread_join tells main to wait for a thread to finish before continuing 
     for (int i = 0; i < 3; i++) {
@@ -59,6 +62,7 @@ int main() {
     }
     pthread_join(fault_t, NULL);
     pthread_join(metrics_t, NULL);
+    pthread_join(clock_t, NULL);
     //Free the memory used by mutex, semaphore and condition variable 
     pthread_mutex_destroy(&grid.lock);
     sem_destroy(&grid.capacity_sem);
