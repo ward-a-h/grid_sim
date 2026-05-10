@@ -153,6 +153,16 @@ void* metrics_thread(void* arg) {
                RESET);
 
         printf(CYAN);
+        printf("╠══════════════ SYSTEM EVENTS ══════════════════════╣\n");
+        printf(RESET);
+
+        printf("║ Fault Count      : %-28d ║\n",
+               grid->metrics.fault_count);
+
+        printf("║ Recovery Count   : %-28d ║\n",
+               grid->metrics.recovery_count);
+
+        printf(CYAN);
         printf("╚═══════════════════════════════════════════════════╝\n");
         printf(RESET);
 
@@ -170,6 +180,8 @@ void* metrics_thread(void* arg) {
            RESET);
 
     fflush(stdout);
+
+    exit(0);
 
     return NULL;
 }
